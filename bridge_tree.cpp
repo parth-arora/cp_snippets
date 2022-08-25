@@ -1,13 +1,13 @@
 //#pragma GCC optimize("Ofast")
 //#pragma GCC target("avx,avx2,fma")
 //#pragma GCC optimization ("unroll-loops")
-// u can always think of Binary Search to find the minimum answer...........
- 
+//u can always think of Binary Search to find the minimum answer...........
+
  
 #include <bits/stdc++.h>
 using namespace std;
  
-typedef long long  ll;
+typedef int ll;
 typedef long double ld;
 typedef pair<ll,ll> pll;
 typedef vector<ll> vl;
@@ -21,153 +21,111 @@ const ll N=32;
 #define fi first
 #define se second
 #define mkp make_pair
-#define clr(v)  v.clear()
+#define clr(v) v.clear()
 #define sze(x) ((ll)x.size())
 #define all(v) v.begin(),v.end()
 #define endl '\n'
 #define level 20
-ll timer,cc,cc1,k;
- 
+ll timer,cc1,cc,cc2;
+
 void boost()
 {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
+ ios_base::sync_with_stdio(false);
+ cin.tie(NULL);
 }
 
 //https://codeforces.com/contest/555/problem/E
- 
-ll dp[MAXN],vis[MAXN];
-ll parent[MAXN][level],depth[MAXN];
-vl V[MAXN],V1[MAXN];
-ll par[MAXN],a[MAXN];
-ll mxd;
- 
-void dfs(ll cur,ll prev)
+
+
+vpl V[MAXN];
+vl V1[MAXN];
+ll tin[MAXN],low[MAXN],vis[MAXN];
+ll dp[MAXN],a[MAXN],a1[MAXN];
+ll depth[MAXN],dp1[MAXN],a2[MAXN];
+ll parent[MAXN][level];
+
+void dfs(ll cur,ll prev,ll id)
 {
-    ll c=0;
+    ll x;
+    tin[cur]=timer++;
+    low[cur]=tin[cur];
+    vis[cur]++;
     
-    dp[cur]++;
-    depth[cur]=depth[prev]+1;
-    parent[cur][0]=prev;
-    
-    for(auto x : V[cur])
+    for(auto y :V[cur])
     {
-        if(x!=prev)
+       x=y.fi;
+       
+        if(vis[x]==0)
         {
-            dfs(x,cur);
-        }
-    }
-}
- 
-void dfs1(ll cur ,ll prev)
-{
-    dp[cur]=1;
-    
-    for(auto x : V[cur])
-    {
-        if(x!=prev&&vis[x]!=1)
-        {
-            dfs1(x,cur);
-            dp[cur]+=dp[x];
-        }
-    }
-}
- 
-ll get(ll cur,ll prev,ll n)
-{
-    ll mx,z;
-    mx=n-dp[cur];
-    z=0;
-    
-    for(auto x : V[cur])
-    {
-        if(x!=prev&&vis[x]!=1)
-        {
-            mx=max(mx,dp[x]);
+            dfs(x,cur,y.se);
+            low[cur]=min(low[cur],low[x]);
             
-            if(dp[x]>(n/2))
+            if(low[x]>tin[cur])
             {
-                z=x;
+                a2[y.se]++;
             }
         }
-    }
-    
-    if(mx>(n/2))
-    {
-        return get(z,cur,n);
-    }
-    
-    return cur;
-}
- 
-void dfs2(ll cur,ll prev,ll d)
-{
-    if(k>=d)
-    {
-        if(k==d)
-        cc++;
+        
+        else if(x==prev&&id==y.se)
+        continue;
         
         else
         {
-            cc+=a[k-d];
+            low[cur]=min(low[cur],tin[x]);
         }
     }
+}
+
+void dfs1(ll cur,ll prev)
+{
+    ll x;
+    vis[cur]++;
+    a[cur]=cc;
     
-    mxd=max(mxd,d);
-    
-    for(auto x : V[cur])
+    for(auto  y : V[cur])
     {
-        if(x!=prev&&vis[x]!=1)
+        x=y.fi;
+        if((vis[x]==0)&&a2[y.se]==0)
         {
-            dfs2(x,cur,d+1);
+            dfs1(x,cur);
         }
     }
 }
  
-void dfs3(ll cur, ll prev,ll d)
+void dfs2(ll cur,ll prev)
 {
-    a[d]++;
+    depth[cur]=depth[prev]+1;
+    parent[cur][0]=prev;
+    a1[cur]=cc1;
+    vis[cur]++;
     
-    for(auto x : V[cur])
+    for(auto x : V1[cur])
     {
-        if(x!=prev&&vis[x]!=1)
+        if(vis[x]==0)
         {
-            dfs3(x,cur,d+1);
+            dfs2(x,cur);
         }
     }
 }
- 
-ll decomp(ll cur)
+
+void dfs3(ll cur,ll prev)
 {
-    ll z,j;
-    dfs1(cur,0);
+    vis[cur]++;
     
-    z=get(cur,0,dp[cur]);
-    vis[z]++;
-    mxd=0;
-    
-    for(auto x : V[z])
+    for(auto x : V1[cur])
     {
         if(vis[x]==0)
         {
-        dfs2(x,0,1);
-        dfs3(x,0,1);
+            dfs3(x,cur);
+            dp1[cur]+=dp1[x];
+            dp[cur]+=dp[x];
+            
+            if(dp1[x]>0&&dp[x]>0)
+            {
+                cc2++;
+            }
         }
     }
-    
-    fill(a,a+mxd+1,0);
-    
-    for(auto x : V[z])
-    {
-        if(vis[x]==0)
-        {
-            j=decomp(x);
-            par[j]=z;
-            V1[z].pb(j);
-        }
-    }
-    
-    return z;
 }
  
 void compute(ll n)
@@ -228,42 +186,125 @@ ll lca(ll u, ll v)
  
     return parent[u][0];
 }
- 
-ll dis(ll x,ll y)
-{
-    ll z,l;
-    
-    z=lca(x,y);
-    l=depth[x]+depth[y]-(2*depth[z]);
-    
-    return l;
-}
- 
- 
+
 int main()
 {
-    boost();
-    
-    ll i,t,q,l,r,ans,mid,c=0,j,z,tc,m,n;
-    ll h,u,mm,w,x,y,l1,r1,d=0,mask,mx;
-    ld f,f1;
-    
-    cin>>n>>k;
-    cc=0;
-    
-    for(i=0;i<(n-1);i++)
-    {
-       cin>>x>>y;
-       V[x].pb(y);
-       V[y].pb(x);
-    }
+ boost();
+  
+ ll i,t,q,l,r,ans,mid,c=0,j,z,tc,n,k;
+ ll h,m,u,mm,w,x,y,l1,r1,d=0,mask,v,mx;
+ ld f,f1;
  
-    
-    dfs(1,0);
-    compute(n);
-    h=decomp(1);
-    
-    cout<<cc<<endl;
-    
+ cin>>n>>m>>q;
+ timer=1;
+ cc=0;
+ cc1=0;
+ cc2=0;
+ 
+ for(i=1;i<=m;i++)
+ {
+     cin>>x>>y;
+     V[x].pb(mkp(y,i));
+     V[y].pb(mkp(x,i));
+ }
+ 
+ for(i=1;i<=n;i++)
+ {
+     if(vis[i]==0)
+     {
+         dfs(i,0,0);
+     }
+ }
+ 
+ for(i=0;i<=n;i++)
+ vis[i]=0;
+ 
+ for(i=1;i<=n;i++)
+ {
+     if(vis[i]==0)
+     {
+         cc++;
+         dfs1(i,0);
+     }
+ }
+ 
+ vpl g;
+ 
+ for(i=1;i<=n;i++)
+ {
+     for(auto y : V[i])
+     {
+         x=y.fi;
+         if(a[i]!=a[x])
+         {
+             V1[a[i]].pb(a[x]);
+         }
+     }
+ }
+ 
+ 
+ for(i=0;i<=n;i++)
+ {
+     vis[i]=0;
+ }
+ 
+ for(i=1;i<=cc;i++)
+ {
+     if(vis[i]==0)
+     {
+         cc1++;
+         dfs2(i,0);
+     }
+ }
+ 
+ compute(cc);
+ 
+ while(q--)
+ {
+     cin>>l>>r;
+     l1=a[l];
+     r1=a[r];
+     
+     if(a1[l1]!=a1[r1])
+     {
+         cc2++;
+     }
+     
+     else if(l1==r1)
+     {
+         continue;
+     }
+     
+     else
+     {
+         z=lca(l1,r1);
+         dp[l1]++;
+         dp[z]--;
+         dp1[r1]++;
+         dp1[z]--;
+     }
+ }
+ 
+ for(i=0;i<=cc;i++)
+ vis[i]=0;
+ 
+ 
+ for(i=1;i<=cc;i++)
+ {
+     if(vis[i]==0)
+     {
+         dfs3(i,0);
+     }
+ }
+ 
+ if(cc2>0)
+ cout<<"No"<<endl;
+ 
+ else
+ cout<<"Yes"<<endl;
+ 
+
+  
+  
 return 0;
 }
