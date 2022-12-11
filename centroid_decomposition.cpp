@@ -1,21 +1,22 @@
-//#pragma GCC optimize("Ofast")
-//#pragma GCC target("avx,avx2,fma")
-//#pragma GCC optimization ("unroll-loops")
-// u can always think of Binary Search to find the minimum answer...........
- 
+//https://www.codechef.com/problems/TREEDECOR
+#pragma GCC optimize("Ofast")
+#pragma GCC target("avx,avx2,fma")
+#pragma GCC optimization ("unroll-loops")
+//u can always think of Binary Search to find the minimum answer...........
+
  
 #include <bits/stdc++.h>
 using namespace std;
  
-typedef long long  ll;
+typedef long long ll;
 typedef long double ld;
 typedef pair<ll,ll> pll;
 typedef vector<ll> vl;
 typedef vector<pll> vpl;
 #define pb push_back
-#define MAXN 200005
 const ll N=32;
 #define INF (ll)1e18
+#define MAXN 50005
 #define mod 1000000007
 //#define mod 998244353
 #define fi first
@@ -26,27 +27,27 @@ const ll N=32;
 #define all(v) v.begin(),v.end()
 #define endl '\n'
 #define level 20
-ll timer,cc,cc1,k;
- 
+ll timer,cc1,cc;
+
 void boost()
 {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
+    cout.tie(NULL);
 }
 
-//https://cses.fi/problemset/task/2080/
- 
 ll dp[MAXN],vis[MAXN];
 ll parent[MAXN][level],depth[MAXN];
-vl V[MAXN],V1[MAXN];
+ll dis[MAXN][level];
+vl V[MAXN];
 ll par[MAXN],a[MAXN];
-ll mxd;
+ll cnt[MAXN],cnt1[MAXN];
+ll cnt2[MAXN],cnt21[MAXN];
  
 void dfs(ll cur,ll prev)
 {
     ll c=0;
     
-    dp[cur]++;
     depth[cur]=depth[prev]+1;
     parent[cur][0]=prev;
     
@@ -100,43 +101,6 @@ ll get(ll cur,ll prev,ll n)
     return cur;
 }
  
-void dfs2(ll cur,ll prev,ll d)
-{
-    if(k>=d)
-    {
-        if(k==d)
-        cc++;
-        
-        else
-        {
-            cc+=a[k-d];
-        }
-    }
-    
-    mxd=max(mxd,d);
-    
-    for(auto x : V[cur])
-    {
-        if(x!=prev&&vis[x]!=1)
-        {
-            dfs2(x,cur,d+1);
-        }
-    }
-}
- 
-void dfs3(ll cur, ll prev,ll d)
-{
-    a[d]++;
-    
-    for(auto x : V[cur])
-    {
-        if(x!=prev&&vis[x]!=1)
-        {
-            dfs3(x,cur,d+1);
-        }
-    }
-}
- 
 ll decomp(ll cur)
 {
     ll z,j;
@@ -144,18 +108,6 @@ ll decomp(ll cur)
     
     z=get(cur,0,dp[cur]);
     vis[z]++;
-    mxd=0;
-    
-    for(auto x : V[z])
-    {
-        if(vis[x]==0)
-        {
-        dfs2(x,0,1);
-        dfs3(x,0,1);
-        }
-    }
-    
-    fill(a,a+mxd+1,0);
     
     for(auto x : V[z])
     {
@@ -163,7 +115,6 @@ ll decomp(ll cur)
         {
             j=decomp(x);
             par[j]=z;
-            V1[z].pb(j);
         }
     }
     
@@ -210,7 +161,6 @@ ll lca(ll u, ll v)
         }
     }
  
- 
     if (u == v)
     {
         return u;
@@ -229,7 +179,7 @@ ll lca(ll u, ll v)
     return parent[u][0];
 }
  
-ll dis(ll x,ll y)
+ll dist(ll x,ll y)
 {
     ll z,l;
     
@@ -238,32 +188,124 @@ ll dis(ll x,ll y)
     
     return l;
 }
- 
- 
+
+
 int main()
 {
     boost();
     
-    ll i,t,q,l,r,ans,mid,c=0,j,z,tc,m,n;
-    ll h,u,mm,w,x,y,l1,r1,d=0,mask,mx;
-    ld f,f1;
+    ll i,n,q,j,x,y,h,k,l1;
+    ll d,z,l,r,c=0,ans,r1;
     
-    cin>>n>>k;
-    cc=0;
+       cin>>n;
+       
+       for(i=1;i<=n;i++)
+        cin>>a[i];
+        
+        for(i=1;i<n;i++)
+        {
+            cin>>x>>y;
+            V[x].pb(y);
+            V[y].pb(x);
+        }
+        
+        dfs(1,0);
+        compute(n);
+        h=decomp(1);
+        
+        
+        for(i=1;i<=n;i++)
+        {
+            y=i;
+            c=0;
+            z=-1;
+            
+            while(y!=0)
+            {
+                l=dist(i,y);
+                r=l*a[i];
+                cnt[y]+=r;
+                cnt1[y]+=a[i];
+                dis[i][c]=l;
+                
+                if(z!=-1)
+                {
+                    cnt2[z]+=r;
+                    cnt21[z]+=a[i];
+                }
+                
+                z=y;
+                y=par[y];
+                c++;
+            }
+        }
+        
+        cin>>q;
     
-    for(i=0;i<(n-1);i++)
-    {
-       cin>>x>>y;
-       V[x].pb(y);
-       V[y].pb(x);
+        while(q--)
+        {
+            cin>>l1;
+            
+            if(l1==1)
+            {
+                cin>>x>>h;
+                
+                y=x;
+                c=0;
+                z=-1;
+                
+                    while(y!=0)
+                    {
+                        l=dis[x][c];
+                        r=l*(h-a[x]);
+                        cnt[y]+=r;
+                        cnt1[y]+=(h-a[x]);
+                        
+                        if(z!=-1)
+                        {
+                            cnt2[z]+=r;
+                            cnt21[z]+=(h-a[x]);
+                        }
+                        
+                        z=y;
+                        y=par[y];
+                        c++;
+                    }
+                    
+                    a[x]=h;
+            }
+            
+            else
+            {
+                cin>>x;
+                ans=0;
+                
+                y=x;
+                c=0;
+                z=-1;
+                
+                while(y!=0)
+                {
+                    l=dis[x][c];
+                    
+                    ans+=cnt[y];
+                    ans+=(cnt1[y]*l);
+                        
+                    if(z!=-1)
+                    {
+                        ans-=cnt2[z];
+                        ans-=(cnt21[z]*l);
+                    }
+                    
+                    z=y;
+                    y=par[y];
+                    c++;
+                    
+                }
+            
+            cout<<ans<<endl;
+            }
     }
- 
-    
-    dfs(1,0);
-    compute(n);
-    h=decomp(1);
-    
-    cout<<cc<<endl;
     
 return 0;
 }

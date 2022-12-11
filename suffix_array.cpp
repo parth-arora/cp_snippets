@@ -2,19 +2,19 @@
 //#pragma GCC target("avx,avx2,fma")
 //#pragma GCC optimization ("unroll-loops")
 //u can always think of Binary Search to find the minimum answer...........
-
+//https://codeforces.com/contest/547/problem/E
  
 #include <bits/stdc++.h>
 using namespace std;
  
-typedef long long ll;
+typedef int ll;
 typedef long double ld;
 typedef pair<ll,ll> pll;
 typedef vector<ll> vl;
 typedef vector<int> vi;
 typedef vector<pll> vpl;
 #define pb push_back
-#define MAXN 200005
+#define MAXN 400005
 const ll N=32;
 #define INF (ll)1e18
 #define mod 1000000007
@@ -34,7 +34,6 @@ void boost()
  ios_base::sync_with_stdio(false);
  cin.tie(NULL);
 }
-
 
 //cp algorithms
 //https://cp-algorithms.com/string/suffix-array.html
@@ -95,7 +94,7 @@ struct suffix_array{
     // rank contains position of ith suffix in sorted order.
     
      //lcp contains longest common prefix for adjacent sorted suffixes
-    // to find lcp of substring starting at i and j ,first find their respective index in array usin rank
+    // to find lcp of substring starting at i and j ,first find their respective index in array using rank
     // then do a rmq in the lcp array
 
 
@@ -222,59 +221,208 @@ struct suffix_array{
 	}
 };
 
+vl seg[4*MAXN];
+ll a[MAXN],b[MAXN];
+
+void build(ll v , ll tl , ll tr)
+{
+	if(tl == tr)
+	{
+		seg[v].pb(a[tl]);
+		return;
+	}
+	
+	ll tm = (tl + tr) / 2;
+	build(2*v , tl , tm);
+	build(2*v + 1, tm+1 , tr);
+
+	merge(all(seg[2*v]),all(seg[2*v+1]),back_inserter(seg[v]));
+	
+}
+
+ll query(ll v , ll tl ,ll tr , ll l , ll r, ll k)
+{
+	if(l>r) 
+	return 0;
+	
+	if(l==tl&&r==tr)
+	{
+		ll res = upper_bound(all(seg[v]), k) - seg[v].begin();
+		return res;
+	}
+	
+	ll tm= (tl+ tr) / 2;
+	ll l1=query(2*v , tl , tm , l ,min(r,tm) , k);
+	ll r1=query(2*v + 1 , tm + 1 , tr , max(l,tm+1) ,r, k);
+	
+	return l1 + r1;
+}
+
+
 int main()
 {
  boost();
   
- ll i,t,q,l,r,ans,mid,c=0,j,z,tc,n,k;
+ ll i,t,q,l,r,ans,mid,c=0,j,z,tc,n,k,n1;
  ll h,m,u,mm,w,x,y,l1,r1,d=0,mask,v,mx;
  ld f,f1;
  
- string s;
+ cin>>n>>q;
+ string s[n];
  
- cin>>s;
- vpl g;
+ string s1,s2;
+ s1="";
  
- suffix_array<string> suf(s);
- 
- cin>>m;
- 
- for(i=0;i<m;i++)
+ for(i=0;i<n;i++)
  {
-     cin>>l>>r;
-     l--;
-     r--;
-     g.pb(mkp(l,r));
+     cin>>s[i];
+     s1+=s[i];
+     s1+='$';
  }
  
- sort(all(g),[&](const pll &p1,const pll &p2)->bool
- {
-    n=suf.n;
-    
-    l=p1.se-p1.fi+1;
-    r=p2.se-p2.fi+1;
-    
-    z=min(l,r);
-    x=log2l(z);
-    
-    pll p3=make_pair(suf.c[x][p1.fi],suf.c[x][(p1.fi+z-(1LL<<x))%n]);
-    pll p4=make_pair(suf.c[x][p2.fi],suf.c[x][(p2.fi+z-(1LL<<x))%n]);
-    
-    if(p3==p4)
-    {
-        if(l==r)
-        return p1.fi<p2.fi;
-        
-        else
-        return l<r;
-    }
-    
-    else
-    return p3<p4;
- });
  
- for(auto x:g)
- cout<<x.fi+1<<" "<<x.se+1<<endl;
+ suffix_array<string> suf(s1);
+ 
+ n1=sze(s1);
+ 
+ for(i=0;i<n;i++)
+ {
+     m=sze(s[i]);
+     x=c;
+     
+     for(j=x;j<x+m;j++,c++)
+     {
+         b[j]=i+1;
+     }
+     
+     b[c]=i+1;
+     c++;
+ }
+ 
+  //lower_bound of string
+  vpl g;
+  
+  for(j=0;j<n;j++)
+  {
+      
+  m=sze(s[j]);
+     
+ r=n1-1;
+ l=0;
+ l1=n1;
+      
+ 
+ while(r>l)
+ {
+     s2="";
+     mid=(l+r)/2;
+     z=suf.p[mid];
+     
+     
+     for(i=z;i<min(n1,z+m);i++)
+     {
+         s2+=s1[i];
+     }
+     
+     if(s[j]<=s2)
+     r=mid;
+     
+     else
+     l=mid+1;
+     
+ }
+ 
+ l1=l;
+ 
+ if(l1<n1)
+ {
+     s2="";
+     z=suf.p[l1];
+     
+     for(i=z;i<min(n1,z+m);i++)
+     s2+=s1[i];
+     
+     if(s2<s[j])
+     l1++;
+ }
+ 
+ 
+ //upper bound of string
+ 
+ r=n1-1;
+ l=0;
+ 
+ 
+ while(r>l)
+ {
+     s2="";
+     mid=(l+r)/2;
+     z=suf.p[mid];
+     
+     
+     for(i=z;i<min(n1,z+m);i++)
+     {
+         s2+=s1[i];
+     }
+     
+     if(s[j]>=s2)
+     l=mid+1;
+     
+     
+     else
+     r=mid;
+     
+ }
+ 
+  r1=l;
+ 
+  if(r1<n1)
+ {
+     s2="";
+     z=suf.p[r1];
+     
+     for(i=z;i<min(n1,z+m);i++)
+     s2+=s1[i];
+     
+     if(s2<=s[j])
+     r1++;
+ }
+ 
+   g.pb(mkp(l1,r1-1));
+  }
+  
+  for(i=0;i<n1;i++)
+  {
+      l=suf.p[i];
+      a[i+1]=b[l];
+  }
+  
+  
+  build(1,1,n1);
+  
+  
+  while(q--)
+  {
+      cin>>l>>r>>k;
+      
+      l1=g[k-1].fi+1;
+      r1=g[k-1].se+1;
+      
+      if(l1>r1)
+      cout<<0<<endl;
+      
+      else
+      {
+      
+      z=query(1,1,n1,l1,r1,r);
+      z-=query(1,1,n1,l1,r1,l-1);
+      
+      cout<<z<<endl;
+      }
+      
+  }
+
+
   
   
 return 0;
