@@ -1,351 +1,305 @@
-//#pragma GCC optimize("Ofast")
-//#pragma GCC target("avx,avx2,fma")
-//#pragma GCC optimization ("unroll-loops")
-//u can always think of Binary Search to find the minimum answer...........
-
- 
 #include <bits/stdc++.h>
 using namespace std;
- 
-typedef long long ll;
-typedef long double ld;
-typedef pair<ll,ll> pll;
-typedef vector<ll> vl;
-typedef vector<pll> vpl;
-#define pb push_back
-#define MAXN 300005
-//const ll N=32;
-#define llINF (ll)1e18
-#define mod 1000000007
-//#define mod 998244353
-#define fi first
-#define se second
-#define mkp make_pair
-#define clr(v) v.clear()
-#define sze(x) ((ll)x.size())
-#define all(v) v.begin(),v.end()
-#define endl '\n'
-#define level 20
-ll timer,cc1,cc,N;
 
-void boost()
-{
- ios_base::sync_with_stdio(false);
- cin.tie(NULL);
-}
+const int N = 2e5 + 9;
 
+using ll = long long;
 
-//https://usaco.guide/adv/segtree-beats?lang=cpp
-// 0 indexed segment tree
+//https://github.com/ShahjalalShohag/code-library/blob/master/Data%20Structures/Segment%20Tree%20Beats.cpp
+// https://judge.yosupo.jp/problem/range_chmin_chmax_add_range_sum
 
-ll A[MAXN];
+struct SGTBeats {
+  const ll inf = 1e18;
+  int n, n0;
+  ll max_v[4 * N], smax_v[4 * N], max_c[4 * N];
+  ll min_v[4 * N], smin_v[4 * N], min_c[4 * N];
+  ll sum[4 * N];
+  ll len[4 * N], ladd[4 * N], lval[4 * N];
 
-//https://codeforces.com/contest/1484/problem/E
+  void update_node_max(int k, ll x) {
+    sum[k] += (x - max_v[k]) * max_c[k];
 
-struct Node {
-	ll sum;  // Sum tag
-	ll max1;  // Max value
-	ll max2;  // Second Max value
-	ll maxc;  // Max value count
-	ll min1;  // Min value
-	ll min2;  // Second Min value
-	ll minc;  // Min value count
-	ll lazy;  // Lazy tag
-} T[MAXN * 4];
+    if (max_v[k] == min_v[k]) {
+      max_v[k] = min_v[k] = x;
+    } else if (max_v[k] == smin_v[k]) {
+      max_v[k] = smin_v[k] = x;
+    } else {
+      max_v[k] = x;
+    }
 
-void merge(int t) {
-	// sum
-	T[t].sum = T[t << 1].sum + T[t << 1 | 1].sum;
+    if (lval[k] != inf && x < lval[k]) {
+      lval[k] = x;
+    }
+  }
+  void update_node_min(int k, ll x) {
+    sum[k] += (x - min_v[k]) * min_c[k];
 
-	// max
-	if (T[t << 1].max1 == T[t << 1 | 1].max1) {
-		T[t].max1 = T[t << 1].max1;
-		T[t].max2 = max(T[t << 1].max2, T[t << 1 | 1].max2);
-		T[t].maxc = T[t << 1].maxc + T[t << 1 | 1].maxc;
-	} else {
-		if (T[t << 1].max1 > T[t << 1 | 1].max1) {
-			T[t].max1 = T[t << 1].max1;
-			T[t].max2 = max(T[t << 1].max2, T[t << 1 | 1].max1);
-			T[t].maxc = T[t << 1].maxc;
-		} else {
-			T[t].max1 = T[t << 1 | 1].max1;
-			T[t].max2 = max(T[t << 1].max1, T[t << 1 | 1].max2);
-			T[t].maxc = T[t << 1 | 1].maxc;
-		}
-	}
+    if (max_v[k] == min_v[k]) {
+      max_v[k] = min_v[k] = x;
+    } else if (smax_v[k] == min_v[k]) {
+      min_v[k] = smax_v[k] = x;
+    } else {
+      min_v[k] = x;
+    }
 
-	// min
-	if (T[t << 1].min1 == T[t << 1 | 1].min1) {
-		T[t].min1 = T[t << 1].min1;
-		T[t].min2 = min(T[t << 1].min2, T[t << 1 | 1].min2);
-		T[t].minc = T[t << 1].minc + T[t << 1 | 1].minc;
-	} else {
-		if (T[t << 1].min1 < T[t << 1 | 1].min1) {
-			T[t].min1 = T[t << 1].min1;
-			T[t].min2 = min(T[t << 1].min2, T[t << 1 | 1].min1);
-			T[t].minc = T[t << 1].minc;
-		} else {
-			T[t].min1 = T[t << 1 | 1].min1;
-			T[t].min2 = min(T[t << 1].min1, T[t << 1 | 1].min2);
-			T[t].minc = T[t << 1 | 1].minc;
-		}
-	}
-}
+    if (lval[k] != inf && lval[k] < x) {
+      lval[k] = x;
+    }
+  }
+  void push(int k) {
+    if (n0 - 1 <= k) return;
+    if (lval[k] != inf) {
+      updateall(2 * k + 1, lval[k]);
+      updateall(2 * k + 2, lval[k]);
+      lval[k] = inf;
+      return;
+    }
+    if (ladd[k] != 0) {
+      addall(2 * k + 1, ladd[k]);
+      addall(2 * k + 2, ladd[k]);
+      ladd[k] = 0;
+    }
+    if (max_v[k] < max_v[2 * k + 1]) {
+      update_node_max(2 * k + 1, max_v[k]);
+    }
+    if (min_v[2 * k + 1] < min_v[k]) {
+      update_node_min(2 * k + 1, min_v[k]);
+    }
 
-void push_add(int t, int tl, int tr, ll v) {
-	if (v == 0) {
-		return;
-	}
-	T[t].sum += (tr - tl + 1) *v;
-	T[t].max1 += v;
-	if (T[t].max2 != -llINF) {
-		T[t].max2 += v;
-	}
-	T[t].min1 += v;
-	if (T[t].min2 != llINF) {
-		T[t].min2 += v;
-	}
-	T[t].lazy += v;
-}
+    if (max_v[k] < max_v[2 * k + 2]) {
+      update_node_max(2 * k + 2, max_v[k]);
+    }
+    if (min_v[2 * k + 2] < min_v[k]) {
+      update_node_min(2 * k + 2, min_v[k]);
+    }
+  }
+  void update(int k) {
+    sum[k] = sum[2 * k + 1]  +  sum[2 * k + 2];
 
-// corresponds to a chmin update
-void push_max(int t, ll v, bool l) {
-	if (v >= T[t].max1) {
-		return;
-	}
-	T[t].sum -= T[t].max1 * T[t].maxc;
-	T[t].max1 = v;
-	T[t].sum += T[t].max1 * T[t].maxc;
-	if (l) {
-		T[t].min1 = T[t].max1;
-	} else {
-		if (v <= T[t].min1) {
-			T[t].min1 = v;
-		} else if (v < T[t].min2) {
-			T[t].min2 = v;
-		}
-	}
-}
+    if (max_v[2 * k + 1] < max_v[2 * k + 2]) {
+      max_v[k] = max_v[2 * k + 2];
+      max_c[k] = max_c[2 * k + 2];
+      smax_v[k] = max(max_v[2 * k + 1], smax_v[2 * k + 2]);
+    } else if (max_v[2 * k + 1] > max_v[2 * k + 2]) {
+      max_v[k] = max_v[2 * k + 1];
+      max_c[k] = max_c[2 * k + 1];
+      smax_v[k] = max(smax_v[2 * k + 1], max_v[2 * k + 2]);
+    } else {
+      max_v[k] = max_v[2 * k + 1];
+      max_c[k] = max_c[2 * k + 1]  +  max_c[2 * k + 2];
+      smax_v[k] = max(smax_v[2 * k + 1], smax_v[2 * k + 2]);
+    }
 
-// corresponds to a chmax update
-void push_min(int t, ll v, bool l) {
-	if (v <= T[t].min1) {
-		return;
-	}
-	T[t].sum -= T[t].min1 * T[t].minc;
-	T[t].min1 = v;
-	T[t].sum += T[t].min1 * T[t].minc;
-	if (l) {
-		T[t].max1 = T[t].min1;
-	} else {
-		if (v >= T[t].max1) {
-			T[t].max1 = v;
-		} else if (v > T[t].max2) {
-			T[t].max2 = v;
-		}
-	}
-}
+    if (min_v[2 * k + 1] < min_v[2 * k + 2]) {
+      min_v[k] = min_v[2 * k + 1];
+      min_c[k] = min_c[2 * k + 1];
+      smin_v[k] = min(smin_v[2 * k + 1], min_v[2 * k + 2]);
+    } else if (min_v[2 * k + 1] > min_v[2 * k + 2]) {
+      min_v[k] = min_v[2 * k + 2];
+      min_c[k] = min_c[2 * k + 2];
+      smin_v[k] = min(min_v[2 * k + 1], smin_v[2 * k + 2]);
+    } else {
+      min_v[k] = min_v[2 * k + 1];
+      min_c[k] = min_c[2 * k + 1]  +  min_c[2 * k + 2];
+      smin_v[k] = min(smin_v[2 * k + 1], smin_v[2 * k + 2]);
+    }
+  }
+  void _update_min(ll x, int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a || max_v[k] <= x) {
+      return;
+    }
+    if (a <= l && r <= b && smax_v[k] < x) {
+      update_node_max(k, x);
+      return;
+    }
+    push(k);
+    _update_min(x, a, b, 2 * k + 1, l, (l + r) / 2);
+    _update_min(x, a, b, 2 * k + 2, (l + r) / 2, r);
+    update(k);
+  }
+  void _update_max(ll x, int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a || x <= min_v[k]) {
+      return;
+    }
+    if (a <= l && r <= b && x < smin_v[k]) {
+      update_node_min(k, x);
+      return;
+    }
+    push(k);
+    _update_max(x, a, b, 2 * k + 1, l, (l + r) / 2);
+    _update_max(x, a, b, 2 * k + 2, (l + r) / 2, r);
+    update(k);
+  }
+  void addall(int k, ll x) {
+    max_v[k] += x;
+    if (smax_v[k] != -inf) smax_v[k] += x;
+    min_v[k] += x;
+    if (smin_v[k] != inf) smin_v[k] += x;
 
-void pushdown(int t, int tl, int tr) {
-	if (tl == tr)
-		return;
-	// sum
-	int tm = (tl + tr) >> 1;
-	push_add(t << 1, tl, tm, T[t].lazy);
-	push_add(t << 1 | 1, tm + 1, tr, T[t].lazy);
-	T[t].lazy = 0;
+    sum[k] += len[k] * x;
+    if (lval[k] != inf) {
+      lval[k] += x;
+    } else {
+      ladd[k] += x;
+    }
+  }
+  void updateall(int k, ll x) {
+    max_v[k] = x; smax_v[k] = -inf;
+    min_v[k] = x; smin_v[k] = inf;
+    max_c[k] = min_c[k] = len[k];
 
-	// max
-	push_max(t << 1, T[t].max1, tl == tm);
-	push_max(t << 1 | 1, T[t].max1, tm + 1 == tr);
+    sum[k] = x * len[k];
+    lval[k] = x; ladd[k] = 0;
+  }
+  void _add_val(ll x, int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a) {
+      return;
+    }
+    if (a <= l && r <= b) {
+      addall(k, x);
+      return;
+    }
+    push(k);
+    _add_val(x, a, b, 2 * k + 1, l, (l + r) / 2);
+    _add_val(x, a, b, 2 * k + 2, (l + r) / 2, r);
+    update(k);
+  }
+  void _update_val(ll x, int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a) {
+      return;
+    }
+    if (a <= l && r <= b) {
+      updateall(k, x);
+      return;
+    }
+    push(k);
+    _update_val(x, a, b, 2 * k + 1, l, (l + r) / 2);
+    _update_val(x, a, b, 2 * k + 2, (l + r) / 2, r);
+    update(k);
+  }
 
-	// min
-	push_min(t << 1, T[t].min1, tl == tm);
-	push_min(t << 1 | 1, T[t].min1, tm + 1 == tr);
-}
+  ll _query_max(int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a) {
+      return -inf;
+    }
+    if (a <= l && r <= b) {
+      return max_v[k];
+    }
+    push(k);
+    ll lv = _query_max(a, b, 2 * k + 1, l, (l + r) / 2);
+    ll rv = _query_max(a, b, 2 * k + 2, (l + r) / 2, r);
+    return max(lv, rv);
+  }
 
-void build(int t=1, int tl=0, int tr=N-1) {
-	T[t].lazy = 0;
-	if (tl == tr) {
-		T[t].sum = T[t].max1 = T[t].min1 = A[tl];
-		T[t].maxc = T[t].minc = 1;
-		T[t].max2 = -llINF;
-		T[t].min2 = llINF;
-		return;
-	}
+  ll _query_min(int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a) {
+      return inf;
+    }
+    if (a <= l && r <= b) {
+      return min_v[k];
+    }
+    push(k);
+    ll lv = _query_min(a, b, 2 * k + 1, l, (l + r) / 2);
+    ll rv = _query_min(a, b, 2 * k + 2, (l + r) / 2, r);
+    return min(lv, rv);
+  }
 
-	int tm = (tl + tr) >> 1;
-	build(t << 1, tl, tm);
-	build(t << 1 | 1, tm + 1, tr);
-	merge(t);
-}
+  ll _query_sum(int a, int b, int k, int l, int r) {
+    if (b <= l || r <= a) {
+      return 0;
+    }
+    if (a <= l && r <= b) {
+      return sum[k];
+    }
+    push(k);
+    ll lv = _query_sum(a, b, 2 * k + 1, l, (l + r) / 2);
+    ll rv = _query_sum(a, b, 2 * k + 2, (l + r) / 2, r);
+    return lv + rv;
+  }
 
-void update_add(int l, int r, ll v, int t=1, int tl=0, int tr=N-1) {
-	if (r < tl || tr < l) {
-		return;
-	}
-	if (l <= tl && tr <= r) {
-		push_add(t, tl, tr, v);
-		return;
-	}
-	pushdown(t, tl, tr);
+  SGTBeats(int n) {
+    SGTBeats(n, nullptr);
+  }
 
-	int tm = (tl + tr) >> 1;
-	update_add(l, r, v, t << 1, tl, tm);
-	update_add(l, r, v, t << 1 | 1, tm + 1, tr);
-	merge(t);
-}
+  SGTBeats(int n, ll *a) : n(n) {
+    n0 = 1;
+    while (n0 < n) n0 <<= 1;
+    for (int i = 0; i < 2 * n0; ++i) ladd[i] = 0, lval[i] = inf;
+    len[0] = n0;
+    for (int i = 0; i < n0 - 1; ++i) len[2 * i + 1] = len[2 * i + 2] = (len[i] >> 1);
 
-void update_chmin(int l, int r, ll v, int t=1, int tl=0, int tr=N-1) {
-	if (r < tl || tr < l || v >= T[t].max1) {
-		return;
-	}
-	if (l <= tl && tr <= r && v > T[t].max2) {
-		push_max(t, v, tl == tr);
-		return;
-	}
-	pushdown(t, tl, tr);
+    for (int i = 0; i < n; ++i) {
+      max_v[n0 - 1 + i] = min_v[n0 - 1 + i] = sum[n0 - 1 + i] = (a != nullptr ? a[i] : 0);
+      smax_v[n0 - 1 + i] =  -inf;
+      smin_v[n0 - 1 + i] = inf;
+      max_c[n0 - 1 + i] = min_c[n0 - 1 + i] = 1;
+    }
+    for (int i = n; i < n0; ++i) {
+      max_v[n0 - 1 + i] = smax_v[n0 - 1 + i] =  -inf;
+      min_v[n0 - 1 + i] = smin_v[n0 - 1 + i] = inf;
+      max_c[n0 - 1 + i] = min_c[n0 - 1 + i] = 0;
+    }
+    for (int i = n0 - 2; i >= 0; i--) {
+      update(i);
+    }
+  }
 
-	int tm = (tl + tr) >> 1;
-	update_chmin(l, r, v, t << 1, tl, tm);
-	update_chmin(l, r, v, t << 1 | 1, tm + 1, tr);
-	merge(t);
-}
+  // all queries are performed on [l, r) segment
 
-void update_chmax(int l, int r, ll v, int t=1, int tl=0, int tr=N-1) {
-	if (r < tl || tr < l || v <= T[t].min1) {
-		return;
-	}
-	if (l <= tl && tr <= r && v < T[t].min2) {
-		push_min(t, v, tl == tr);
-		return;
-	}
-	pushdown(t, tl, tr);
+  // range minimize query
+  void update_min(int a, int b, ll x) {
+    _update_min(x, a, b, 0, 0, n0);
+  }
+  // range maximize query
+  void update_max(int a, int b, ll x) {
+    _update_max(x, a, b, 0, 0, n0);
+  }
+  // range add query
+  void add_val(int a, int b, ll x) {
+    _add_val(x, a, b, 0, 0, n0);
+  }
+  // range update query
+  void update_val(int a, int b, ll x) {
+    _update_val(x, a, b, 0, 0, n0);
+  }
+  // range minimum query
+  ll query_max(int a, int b) {
+    return _query_max(a, b, 0, 0, n0);
+  }
+  // range maximum query
+  ll query_min(int a, int b) {
+    return _query_min(a, b, 0, 0, n0);
+  }
+  // range sum query
+  ll query_sum(int a, int b) {
+    return _query_sum(a, b, 0, 0, n0);
+  }
+};
 
-	int tm = (tl + tr) >> 1;
-	update_chmax(l, r, v, t << 1, tl, tm);
-	update_chmax(l, r, v, t << 1 | 1, tm + 1, tr);
-	merge(t);
-}
-
-ll query_sum(int l, int r, int t=1, int tl=0, int tr=N-1) {
-	if (r < tl || tr < l) {
-		return -llINF;
-	}
-	if (l <= tl && tr <= r) {
-		return T[t].max1;
-	}
-	pushdown(t, tl, tr);
-
-	int tm = (tl + tr) >> 1;
-	return max(query_sum(l, r, t << 1, tl, tm),query_sum(l, r, t << 1 | 1, tm + 1, tr));
-}
-
-
-int main()
-{
- boost();
-  
- ll i,t,q,l,r,ans,mid,c=0,j,z,tc,k,n;
- ll h,m,u,mm,w,x,y,l1,r1,d=0,mask,v,mx;
- ld f,f1;
- 
- cin>>n;
- 
- N=n;
- ll a[n],b[n];
- ll b1[n],b2[n];
- pll p[n];
- stack<pll> ss;
- 
- for(i=0;i<n;i++)
- {
- cin>>a[i];
- p[i]=mkp(a[i],i);
- }
- 
- for(i=0;i<n;i++)
- A[i]=-llINF;
- 
- build();
- 
- for(i=0;i<n;i++)
- cin>>b[i];
- 
- ss.push(p[0]);
- 
- for(i=1;i<n;i++)
- {
-     while(!ss.empty()&&ss.top().fi>p[i].fi)
-     {
-         b1[ss.top().se]=i;
-         ss.pop();
-     }
-     
-     ss.push(p[i]);
- }
- 
- while(!ss.empty())
- {
-     b1[ss.top().se]=n;
-     ss.pop();
- }
- 
-  ss.push(p[n-1]);
- 
- for(i=n-2;i>=0;i--)
- {
-     while(!ss.empty()&&ss.top().fi>p[i].fi)
-     {
-         b2[ss.top().se]=i;
-         ss.pop();
-     }
-     
-     ss.push(p[i]);
- }
- 
- while(!ss.empty())
- {
-     b2[ss.top().se]=-1;
-     ss.pop();
- }
- 
- for(i=0;i<n;i++)
- {
-     l=b2[i];
-     r=b1[i];
-     z=0;
-     
-     if(i==0)
-     {
-         z+=b[i];
-         update_chmax(i,r-1,z);
-         continue;
-     }
-     
-     if(l==-1)
-     {
-         z=max(z,query_sum(l+1,i-1));
-     }
-     
-     else
-     {
-         z=query_sum(l,i-1);
-     }
-     
-     z+=b[i];
-     
-     update_chmax(i,r-1,z);
- }
- 
- ans=query_sum(n-1,n-1);
- 
- cout<<ans<<endl;
- 
- 
-
-
-  
-  
-return 0;
+ll a[N];
+int32_t main() {
+  ios_base::sync_with_stdio(0);
+  cin.tie(0);
+  int n, q; cin >> n >> q;
+  for (int i = 0; i < n; i++) {
+    cin >> a[i];
+  }
+  SGTBeats t(n, a);
+  while (q--) {
+    int ty, l, r; cin >> ty >> l >> r;
+    ll x; if (ty < 3) cin >> x;
+    if (ty == 0) {
+      t.update_min(l, r, x);
+    }    
+    else if (ty == 1) {
+      t.update_max(l, r, x);
+    }    
+    else if (ty == 2) {
+      t.add_val(l, r, x);
+    }
+    else {
+      cout << t.query_sum(l, r) << '\n';
+    }
+  }
+  return 0;
 }
