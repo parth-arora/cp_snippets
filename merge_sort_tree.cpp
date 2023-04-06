@@ -35,41 +35,41 @@ void boost()
 }
 
 
-vector<ll> st[4*MAXN];
+vector<ll> seg[4*MAXN];
 ll a[MAXN];
 
-void build(ll si , ll ss , ll se)
+void build(ll v , ll tl , ll tr)
 {
-	if(ss == se)
+	if(tl == tr)
 	{
-		st[si].pb(a[ss]);
+		seg[v].pb(a[tl]);
 		return;
 	}
 	
-	ll mid = (ss + se) / 2;
-	build(2*si , ss , mid);
-	build(2*si + 1, mid+1 , se);
+	ll tm = (tl + tr) / 2;
+	build(2*v , tl , tm);
+	build(2*v + 1, tm+1 , tr);
 
-	merge(all(st[2*si]),all(st[2*si+1]),back_inserter(st[si]));
+	merge(all(seg[2*v]),all(seg[2*v+1]),back_inserter(seg[v]));
 	
 }
 
-ll query(ll si , ll ss ,ll se , ll qs , ll qe , ll k)
+ll query(ll v , ll tl ,ll tr , ll l , ll r, ll k)
 {
-	if(ss > qe || se < qs) 
+	if(l>r) 
 	return 0;
 	
-	if(ss >= qs && se <= qe)
+	if(l==tl&&r==tr)
 	{
-		ll res = upper_bound(st[si].begin() , st[si].end() , k) - st[si].begin();
+		ll res = upper_bound(all(seg[v]), k) - seg[v].begin();
 		return res;
 	}
 	
-	ll mid = (ss + se) / 2;
-	ll l = query(2*si , ss , mid , qs , qe , k);
-	ll r = query(2*si + 1 , mid + 1 , se , qs , qe , k);
+	ll tm= (tl+ tr) / 2;
+	ll l1=query(2*v , tl , tm , l ,min(r,tm) , k);
+	ll r1=query(2*v + 1 , tm + 1 , tr , max(l,tm+1) ,r, k);
 	
-	return l + r;
+	return l1 + r1;
 }
 
 // it gives us the number of elements lesser than or equal to k in a range 
