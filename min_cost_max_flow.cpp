@@ -43,6 +43,11 @@ struct Edge
 //https://cp-algorithms.com/graph/min_cost_flow.html
 //https://atcoder.jp/contests/abc247/tasks/abc247_g
 
+// just for reference of another question
+// in bipartite graph according to Konig's theorem
+// 1. The maximum independent set is a complement of the minimum vertex cover.
+// 2. minimum vertex cover = maximum bipartite matching
+
 vector<vector<ll>> adj, cost, capacity;
 
 void shortest_paths(ll n, ll v0, vector<ll>& d, vector<ll>& p) {
