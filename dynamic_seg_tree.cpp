@@ -1,68 +1,189 @@
-/*************************************************************************************
-    Implicit segment tree with addition on the interval
-    and getting the value of some element. 
-    Works on the intervals like [1..10^9]. 
-    O(logN) on query, O(NlogN) of memory.
-    Author: Bekzhan Kassenov.
-    Based on problem 3327 from informatics.mccme.ru
-    http://informatics.mccme.ru/moodle/mod/statements/view.php?chapterid=3327
-*************************************************************************************/
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
+//#pragma GCC optimize("Ofast")
+//#pragma GCC target("avx,avx2,fma")
+//#pragma GCC optimization ("unroll-loops")
+//u can always think of Binary Search to find the minimum answer...........
+//https://atcoder.jp/contests/abc403/tasks/abc403_g
 
+ 
+#include <bits/stdc++.h>
 using namespace std;
-
+ 
 typedef long long ll;
-struct Node {
-    ll sum;
-    Node *l, *r;
+typedef long double ld;
+typedef pair<ll,ll> pll;
+typedef vector<ll> vl;
+typedef vector<pll> vpl;
+#define pb push_back
+#define MAXN 200005
+const ll N=32;
+#define INF (ll)1e18
+#define mod 1000000000
+//#define mod 998244353
+#define fi first
+#define se second
+#define mkp make_pair
+#define clr(v) v.clear()
+#define sze(x) ((ll)x.size())
+#define all(v) v.begin(),v.end()
+#define endl '\n'
+#define level 20
+ll timer,cc1,cc;
 
-    Node() : sum(0), l(NULL), r(NULL) { }
+void boost()
+{
+ ios_base::sync_with_stdio(false);
+ cin.tie(NULL);
+}
+
+struct seg_node 
+{
+	seg_node *left=nullptr, *right=nullptr;
+	ll cnt=0, odd=0,ev=0;
 };
-void add(Node *v, int l, int r, int q_l, int q_r, ll val) {
-    if (l > r || q_r < l || q_l > r)
-        return;
-    if (q_l <= l && r <= q_r) {
-        v -> sum += val;
-        return;
-    }
-    int mid = (l + r) >> 1;
-    if (v -> l == NULL)
-        v -> l = new Node();
-    if (v -> r == NULL)
-        v -> r = new Node();
-    add(v -> l, l, mid, q_l, q_r, val);
-    add(v -> r, mid + 1, r, q_l, q_r, val);
-}
-ll get(Node *v, int l, int r, int pos) {
-    if (!v || l > r || pos < l || pos > r)
-        return 0;
-    if (l == r) 
-        return v -> sum;
-    int mid = (l + r) >> 1;
-    return v -> sum + get(v -> l, l, mid, pos) + get(v -> r, mid + 1, r, pos);
-}
-int n, m, t, x, y, val;
-char c;
-int main() {
-    Node *root = new Node();
 
-    scanf("%d", &n);
-    for (int i = 0; i < n; i++) {
-        scanf("%d", &x);
-        add(root, 0, n - 1, i, i, x);
-    }
-    scanf("%d", &m);
-    for (int i = 0; i < m; i++) {
-        scanf("\n%c", &c);
-        if (c == 'a') {
-            scanf("%d%d%d", &x, &y, &val);
-            add(root, 0, n - 1, --x, --y, val);
-        } else {
-            scanf("%d", &x);
-            printf("%I64d ", get(root, 0, n - 1, --x));
-        }
-    }
-    return 0;
+seg_node* func(seg_node *a, seg_node *b) 
+{
+   auto *node = new seg_node;
+   
+   node->odd = a->odd;
+   node->ev = a->ev;
+   node->cnt = a->cnt+b->cnt;
+   
+   if(a->cnt&1)
+   {
+   node->odd+=b->ev;
+   node->ev+=b->odd;
+   }
+   
+   else
+   {
+   node->odd+=b->odd;
+   node->ev+=b->ev;
+   }
+   
+	return node;
+}
+
+void init(vl &vec, seg_node *node, ll left, ll right) 
+{
+	if(left == right)
+	{
+		node->odd= vec[left - 1];
+		node->cnt++;
+		return;
+	}
+	
+	node->left = new seg_node;
+	node->right = new seg_node;
+	
+	init(vec, node->left, left, (left + right) >> 1);
+	init(vec, node->right, ((left + right) >> 1) + 1, right);
+	
+	node->odd = node->left->odd;
+   node->ev = node->left->ev;
+   node->cnt = node->left->cnt + node->right->cnt;
+   
+   if(node->left->cnt&1)
+   {
+   node->odd+=node->right->ev;
+   node->ev+=node->right->odd;
+   }
+   
+   else
+   {
+   node->odd+=node->right->odd;
+   node->ev+=node->right->ev;
+   }
+}
+
+void update(seg_node *node, ll left, ll right, ll index, ll value)
+{
+	if(index < left || right < index) 
+	return;
+	
+	if(left == right) 
+	{
+	   if((node->cnt)&1)
+	   node->ev+=index;
+	   
+	   else
+	   node->odd+=index;
+	   
+		node->cnt++;
+		return;
+	}
+	
+	if(node->left == nullptr) 
+	node->left = new seg_node;
+	
+	if(node->right == nullptr) 
+	node->right = new seg_node;
+	
+	update(node->left, left, (left + right) >> 1, index, value);
+	update(node->right, ((left + right) >> 1) + 1, right, index, value);
+	
+	node->odd = node->left->odd;
+   node->ev = node->left->ev;
+   node->cnt = node->left->cnt + node->right->cnt;
+   
+   if(node->left->cnt&1)
+   {
+   node->odd+=node->right->ev;
+   node->ev+=node->right->odd;
+   }
+   
+   else
+   {
+   node->odd+=node->right->odd;
+   node->ev+=node->right->ev;
+   }
+}
+
+seg_node* query(seg_node *node, ll left, ll right, ll start, ll end) 
+{
+	if(right < start || end < left || node == nullptr) 
+	return (new seg_node);
+	
+	if(start == left && right == end) 
+	return node;
+	
+	ll mid = (left + right) >> 1;
+	
+	return func(query(node->left, left, mid, start, end), query(node->right, mid + 1, right, start, end));
+}
+
+int main()
+{
+ boost();
+  
+ ll i,t,q,l,r,ans,mid,c=0,j,z,tc,n,k;
+ ll h,m,u,mm,w,x,y,l1,r1,d=0,mask,v,mx;
+ ld f,f1;
+ 
+ cin>>q;
+ z=0;
+ ans=0;
+ 
+ auto *root = new seg_node;
+ 
+ while(q--)
+ {
+    cin>>y;
+    x=y+z;
+    x%=mod;
+    x++;
+    
+    // takes care of numbers up to exact mod, 1e9.
+       update(root,ll(1),mod,x,ll(1));
+       auto *node = query(root,ll(1),mod,ll(1),mod);
+       ans=node->odd;
+       
+       cout<<ans<<endl;
+       z=ans;
+ }
+
+
+  
+  
+return 0;
 }
