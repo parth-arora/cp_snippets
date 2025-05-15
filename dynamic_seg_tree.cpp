@@ -2,7 +2,6 @@
 //#pragma GCC target("avx,avx2,fma")
 //#pragma GCC optimization ("unroll-loops")
 //u can always think of Binary Search to find the minimum answer...........
-//https://atcoder.jp/contests/abc403/tasks/abc403_g
 
  
 #include <bits/stdc++.h>
@@ -41,9 +40,8 @@ struct seg_node
 	ll cnt=0, odd=0,ev=0;
 };
 
-seg_node* func(seg_node *a, seg_node *b) 
+seg_node* func(seg_node* &node, seg_node *a, seg_node *b) 
 {
-   auto *node = new seg_node;
    
    node->odd = a->odd;
    node->ev = a->ev;
@@ -78,22 +76,8 @@ void init(vl &vec, seg_node *node, ll left, ll right)
 	
 	init(vec, node->left, left, (left + right) >> 1);
 	init(vec, node->right, ((left + right) >> 1) + 1, right);
+	node = func(node, node->left, node->right);
 	
-	node->odd = node->left->odd;
-   node->ev = node->left->ev;
-   node->cnt = node->left->cnt + node->right->cnt;
-   
-   if(node->left->cnt&1)
-   {
-   node->odd+=node->right->ev;
-   node->ev+=node->right->odd;
-   }
-   
-   else
-   {
-   node->odd+=node->right->odd;
-   node->ev+=node->right->ev;
-   }
 }
 
 void update(seg_node *node, ll left, ll right, ll index, ll value)
@@ -121,22 +105,7 @@ void update(seg_node *node, ll left, ll right, ll index, ll value)
 	
 	update(node->left, left, (left + right) >> 1, index, value);
 	update(node->right, ((left + right) >> 1) + 1, right, index, value);
-	
-	node->odd = node->left->odd;
-   node->ev = node->left->ev;
-   node->cnt = node->left->cnt + node->right->cnt;
-   
-   if(node->left->cnt&1)
-   {
-   node->odd+=node->right->ev;
-   node->ev+=node->right->odd;
-   }
-   
-   else
-   {
-   node->odd+=node->right->odd;
-   node->ev+=node->right->ev;
-   }
+	node = func(node, node->left, node->right);
 }
 
 seg_node* query(seg_node *node, ll left, ll right, ll start, ll end) 
@@ -149,7 +118,8 @@ seg_node* query(seg_node *node, ll left, ll right, ll start, ll end)
 	
 	ll mid = (left + right) >> 1;
 	
-	return func(query(node->left, left, mid, start, end), query(node->right, mid + 1, right, start, end));
+	auto *new_node = new seg_node;
+	return func(new_node, query(node->left, left, mid, start, end), query(node->right, mid + 1, right, start, end));
 }
 
 int main()
@@ -173,7 +143,6 @@ int main()
     x%=mod;
     x++;
     
-    // takes care of numbers up to exact mod, 1e9.
        update(root,ll(1),mod,x,ll(1));
        auto *node = query(root,ll(1),mod,ll(1),mod);
        ans=node->odd;
