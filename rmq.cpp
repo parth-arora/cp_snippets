@@ -25,4 +25,6 @@ private:
     vector<vector<int>> sparse_table;
 };
 
+
 RMQ ob(g);
+// for range l to r use [l,r+1];
